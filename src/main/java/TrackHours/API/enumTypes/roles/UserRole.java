@@ -1,4 +1,4 @@
-package TrackHours.API.roles;
+package TrackHours.API.enumTypes.roles;
 
 public enum UserRole {
     ADMIN("ADMIN"),

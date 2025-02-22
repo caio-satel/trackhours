@@ -1,4 +1,4 @@
-package TrackHours.API.enumTypes.roles;
+package TrackHours.API.enumTypes.projects;
 
 public enum StatusProject {
     PLANNED,
