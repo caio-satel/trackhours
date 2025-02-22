@@ -1,4 +1,6 @@
 package TrackHours.API.DTO.User;
 
-public record RegisterDTO() {
+import TrackHours.API.enumTypes.roles.UserRole;
+
+public record RegisterDTO(String name, String email, String password, UserRole role) {
 }

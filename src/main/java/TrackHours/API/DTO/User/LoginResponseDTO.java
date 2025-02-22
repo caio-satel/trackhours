@@ -1,4 +1,5 @@
 package TrackHours.API.DTO.User;
 
-public record LoginResponseDTO() {
+public record LoginResponseDTO(String token) {
+
 }
