@@ -44,7 +44,7 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
 
     @Column(name = "ultimo_login")
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+    // @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
     private Instant lastLogin;
 
     @Enumerated(EnumType.STRING)
