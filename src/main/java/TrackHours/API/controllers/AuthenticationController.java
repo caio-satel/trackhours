@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("auth")
 public class AuthenticationController {
@@ -36,7 +40,15 @@ public class AuthenticationController {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = authenticationManager.authenticate(usernamePassword);
 
-        var token = tokenService.generateToken((User)auth.getPrincipal());
+        // Obtem usuário autenticado
+        var user = (User) auth.getPrincipal();
+
+        // Atualiza o lastLogin com UTC correto no banco
+        user.setLastLogin(Instant.now().plus(Duration.ofHours(-3)));
+        userRepository.save(user);
+
+        // Gerar o token
+        var token = tokenService.generateToken(user);
 
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
