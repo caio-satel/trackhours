@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +45,7 @@ public class User implements UserDetails {
 
     @Column(name = "ultimo_login")
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-    private LocalDateTime lastLogin;
+    private Instant lastLogin;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "perfil")
