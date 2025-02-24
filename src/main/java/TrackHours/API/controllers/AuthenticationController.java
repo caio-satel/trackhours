@@ -4,6 +4,7 @@ import TrackHours.API.DTO.User.AuthenticationDTO;
 import TrackHours.API.DTO.User.LoginResponseDTO;
 import TrackHours.API.DTO.User.RegisterDTO;
 import TrackHours.API.entities.User;
+import TrackHours.API.enumTypes.roles.UserRole;
 import TrackHours.API.repositories.UserRepository;
 import TrackHours.API.security.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestController
 @RequestMapping("auth")
@@ -54,16 +56,16 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Object> register(@RequestBody @Validated RegisterDTO data) {
+    public ResponseEntity<Map<String, String>> register(@RequestBody @Validated RegisterDTO data) {
         if (this.userRepository.findByEmail(data.email()) != null) {
             return ResponseEntity.badRequest().build();
         }
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User newUser = new User(data.name(), data.email(), encryptedPassword, data.role());
+        User newUser = new User(data.name(), data.email(), encryptedPassword, UserRole.USER);
 
         this.userRepository.save(newUser);
 
-        return ResponseEntity.ok(newUser);
+        return ResponseEntity.ok(Map.of("message", "Usuário criado com sucesso!"));
     }
 }
