@@ -6,6 +6,7 @@ import TrackHours.API.entities.User;
 import TrackHours.API.enumTypes.roles.UserRole;
 import TrackHours.API.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,11 @@ public class UserService {
     // Find By ID
     public Optional<User> findUserById(Long id) {
         return userRepository.findById(id);
+    }
+
+    // Find By User Logged
+    public UserDetails findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     // Update User By ID
