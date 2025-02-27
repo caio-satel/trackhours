@@ -1,6 +1,7 @@
 package TrackHours.API.services;
 
 import TrackHours.API.DTO.User.CreateUserDTO;
+import TrackHours.API.DTO.User.UpdateRoleUserDTO;
 import TrackHours.API.DTO.User.UpdateUserDTO;
 import TrackHours.API.entities.User;
 import TrackHours.API.enumTypes.roles.UserRole;
@@ -27,7 +28,7 @@ public class UserService {
         // Cryptographic password
         var hashedPassword = passwordEncoder.encode(createUserDTO.password());
         // DTO -> Entity
-        var userCreated = new User(createUserDTO.name(), createUserDTO.email(), hashedPassword, UserRole.USER);
+        var userCreated = new User(createUserDTO.name(), createUserDTO.email(), hashedPassword, createUserDTO.role());
         var userSaved = userRepository.save(userCreated);
 
         return userSaved.getId();
@@ -63,6 +64,22 @@ public class UserService {
                 String hashedPassword = passwordEncoder.encode(updateUserDto.password());
                 user.setPassword(hashedPassword);
 
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Update Role User
+    public boolean updateRoleUser(Long id, UpdateRoleUserDTO updateRoleUserDTO) {
+        var userEntity = userRepository.findById(id);
+
+        if(userEntity.isPresent()) {
+            var user = userEntity.get();
+
+            if (updateRoleUserDTO.role() != null) {
+                user.setRole(updateRoleUserDTO.role());
                 userRepository.save(user);
                 return true;
             }
