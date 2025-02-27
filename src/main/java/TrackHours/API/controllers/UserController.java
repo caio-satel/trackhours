@@ -1,8 +1,6 @@
 package TrackHours.API.controllers;
 
-import TrackHours.API.DTO.User.CreateUserDTO;
-import TrackHours.API.DTO.User.UpdateUserDTO;
-import TrackHours.API.DTO.User.UserNoProjectsResponseDTO;
+import TrackHours.API.DTO.User.*;
 import TrackHours.API.DTO.mapper.UserMapper;
 import TrackHours.API.entities.User;
 import TrackHours.API.services.UserService;
@@ -55,18 +53,29 @@ public class UserController {
     }
 
     @GetMapping("/userLogged")
-    public ResponseEntity<Object> getLoggedUser(Authentication authentication) {
+    public ResponseEntity<UserLoggedDTO> getLoggedUser(Authentication authentication) {
         String email = authentication.getName(); // Email do usuário autenticado
         User user = (User) userService.findByEmail(email); // Busca no banco pelo email
 
-        String nameUserLogged = user.getName();
+        UserLoggedDTO response = new UserLoggedDTO(user.getName(), user.getRole());
 
-        return ResponseEntity.ok().body(nameUserLogged);
+        return ResponseEntity.ok().body(response);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> uptadeUserById(@PathVariable Long id, @RequestBody UpdateUserDTO updateUserDTO) {
         boolean userUpdated = userService.updateUserById(id, updateUserDTO);
+
+        if (!userUpdated) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/role/{id}")
+    public ResponseEntity<Void> updateRoleUser(@PathVariable Long id, @RequestBody UpdateRoleUserDTO updateRoleUserDTO) {
+        boolean userUpdated = userService.updateRoleUser(id, updateRoleUserDTO);
 
         if (!userUpdated) {
             return ResponseEntity.notFound().build();
