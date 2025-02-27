@@ -1,4 +1,6 @@
 package TrackHours.API.DTO.User;
 
-public record UpdateRoleUserDTO() {
+import TrackHours.API.enumTypes.roles.UserRole;
+
+public record UpdateRoleUserDTO(UserRole role) {
 }
