@@ -2,15 +2,23 @@ package TrackHours.API.entities;
 
 import TrackHours.API.enumTypes.tasks.StatusTask;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "tarefas")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Task {
 
     @Id
@@ -26,12 +34,12 @@ public class Task {
     private LocalDateTime createdAt;
 
     @Column(name = "data_inicio", nullable = false)
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-    private LocalDateTime startDate;
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate startDate;
 
     @Column(name = "data_fim", nullable = false)
-    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
-    private LocalDateTime endDate;
+    @JsonFormat(pattern = "dd/MM/yyyy")
+    private LocalDate endDate;
 
     // Open, Progress, Done or Paused
     @Enumerated(EnumType.STRING)
@@ -39,13 +47,41 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "id_projeto", nullable = false)
-    private Project projectId;
+    private Project project;
 
-    @ManyToMany
-    @JoinTable(
-            name = "usuario_tarefas",
-            joinColumns = @JoinColumn(name = "id_tarefas"),
-            inverseJoinColumns = @JoinColumn(name = "id_usuario")
-    )
-    private List<User> collaborators = new ArrayList<>();
+    @ManyToMany(mappedBy = "tasks")
+    private List<User> integrantes = new ArrayList<>();
+
+    public Task(String name,
+                LocalDate startDate,
+                LocalDate endDate,
+                Project project,
+                StatusTask status) {
+
+        this.name = name;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.project = project;
+        this.status = status;
+    }
+
+    public void setIntegrantes(List<User> users) {
+        this.integrantes = users;
+        // Atualiza o outro lado do relacionamento
+        for (User user : users) {
+            if (!user.getTasks().contains(this)) {
+                user.getTasks().add(this);
+            }
+        }
+    }
+
+    public void addCollaborator(User user) {
+        this.integrantes.add(user);
+        user.getTasks().add(this);
+    }
+
+    public void removeCollaborator(User user) {
+        this.integrantes.remove(user);
+        user.getTasks().remove(this);
+    }
 }

@@ -4,6 +4,8 @@ import TrackHours.API.DTO.User.UserNoProjectsResponseDTO;
 import TrackHours.API.enumTypes.projects.PriorityProject;
 import TrackHours.API.enumTypes.projects.StatusProject;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -52,9 +54,10 @@ public class Project {
 
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
+    @JsonIgnore
     private User responsibleUser;
 
-    @OneToMany(mappedBy = "projectId")
+    @OneToMany(mappedBy = "project")
     private List<Task> tasks = new ArrayList<>();
 
     public Project(String name,

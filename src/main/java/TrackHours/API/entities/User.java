@@ -1,7 +1,9 @@
 package TrackHours.API.entities;
 
 import TrackHours.API.enumTypes.roles.UserRole;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -51,7 +53,16 @@ public class User implements UserDetails {
     private UserRole role;
 
     @OneToMany(mappedBy = "responsibleUser")
+    @JsonIgnore
     private List<Project> projects = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "usuario_tarefas",
+            joinColumns = @JoinColumn(name = "id_usuario"),
+            inverseJoinColumns = @JoinColumn(name = "id_tarefa")
+    )
+    private List<Task> tasks = new ArrayList<>();
 
     public User(String name, String email, String password, UserRole role) {
         this.name = name;

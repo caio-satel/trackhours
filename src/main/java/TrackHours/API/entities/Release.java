@@ -33,9 +33,9 @@ public class Release {
 
     @ManyToOne
     @JoinColumn(name = "id_atividade", nullable = false)
-    private Task taskId;
+    private Task task;
 
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
-    private User userId;
+    private User user;
 }
