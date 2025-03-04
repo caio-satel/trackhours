@@ -62,12 +62,16 @@ public class ProjectService {
                 return false; // Usuário não foi encontrado
             }
 
-            if (updateProjectDTO.name() != null && updateProjectDTO.startDate() != null && updateProjectDTO.endDate() != null && updateProjectDTO.priority() != null) {
+            if (updateProjectDTO.name() != null
+                    && updateProjectDTO.startDate() != null
+                    && updateProjectDTO.endDate() != null
+                    && updateProjectDTO.priority() != null) {
                 project.setName(updateProjectDTO.name());
                 project.setStartDate(updateProjectDTO.startDate());
                 project.setEndDate(updateProjectDTO.endDate());
                 project.setResponsibleUser(userEntity.get());
                 project.setPriority(updateProjectDTO.priority());
+                project.setStatus(updateProjectDTO.status());
 
                 projectRepository.save(project);
 
