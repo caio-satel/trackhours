@@ -14,6 +14,7 @@ import TrackHours.API.repositories.ProjectRepository;
 import TrackHours.API.repositories.TaskRepository;
 import TrackHours.API.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -64,6 +65,15 @@ public class TaskService {
     // Find All Tasks
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
+    }
+
+    public List<Task> getTasksForCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+
+        User user = userRepository.findUserByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return taskRepository.findTasksByUser(user);
     }
 
     // Update Task by ID

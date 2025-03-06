@@ -11,6 +11,7 @@ import TrackHours.API.entities.Task;
 import TrackHours.API.services.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -50,6 +51,17 @@ public class TaskController {
                 .toList();
 
         return ResponseEntity.ok().body(taskResponse);
+    }
+
+    @GetMapping("/byUser")
+    public ResponseEntity<List<TaskDTO>> getTasksForCurrentUser(Authentication authentication) {
+        List<Task> tasks = taskService.getTasksForCurrentUser(authentication);
+
+        List<TaskDTO> taskDTOs = tasks.stream()
+                .map(map::taskToTaskDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(taskDTOs);
     }
 
     @PutMapping("/{id}")
