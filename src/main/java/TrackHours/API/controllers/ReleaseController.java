@@ -45,6 +45,22 @@ public class ReleaseController {
         return ResponseEntity.ok().body(releaseResponse);
     }
 
+    @GetMapping("/byUser")
+    public ResponseEntity<List<ReleaseDTO>> getReleasesByUserLogged(Authentication authentication) {
+        try {
+            List<Release> releases = releaseService.getReleasesByUserLogged(authentication);
+
+            List<ReleaseDTO> releaseResponse = releases
+                    .stream()
+                    .map(allReleases -> map.releaseToReleaseDTO(allReleases))
+                    .toList();
+
+            return ResponseEntity.ok(releaseResponse);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ReleaseDTO> releaseById(@PathVariable Long id) {
         Release release = releaseService.getReleaseById(id);

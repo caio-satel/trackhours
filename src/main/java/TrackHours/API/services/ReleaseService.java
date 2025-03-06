@@ -62,6 +62,16 @@ public class ReleaseService {
         return releaseRepository.findAll();
     }
 
+    // Find all releases by user logged
+    public List<Release> getReleasesByUserLogged(Authentication authentication) {
+        String email = authentication.getName();
+
+        userRepository.findUserByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return releaseRepository.findReleasesByUserLogged(email);
+    }
+
     // Find Release by ID
     public Release getReleaseById(Long id) {
         Release release = releaseRepository.findById(id)
