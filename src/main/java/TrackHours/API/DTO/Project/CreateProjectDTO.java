@@ -12,6 +12,5 @@ public record CreateProjectDTO(String name,
                                @JsonFormat(pattern = "dd/MM/yyyy")
                                LocalDate endDate,
                                Long responsibleUser,
-                               StatusProject status,
                                PriorityProject priority) {
 }
