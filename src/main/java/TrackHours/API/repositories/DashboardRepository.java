@@ -14,4 +14,10 @@ public interface DashboardRepository extends JpaRepository<Project, Long> {
             "JOIN t.integrantes u " +
             "WHERE u.email = :email")
     List<Project> findProjectsAndTasksByUser(@Param("email") String email);
+
+    @Query("SELECT COUNT(t) FROM Task t " +
+            "JOIN t.integrantes u " +
+            "WHERE u.email = :email AND t.endDate < CURRENT_DATE")
+    Long countLateTasksByUser(@Param("email") String email);
+
 }
