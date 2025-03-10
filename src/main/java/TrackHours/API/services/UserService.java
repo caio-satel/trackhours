@@ -1,12 +1,18 @@
 package TrackHours.API.services;
 
+import TrackHours.API.DTO.User.ChangePasswordDTO;
 import TrackHours.API.DTO.User.CreateUserDTO;
 import TrackHours.API.DTO.User.UpdateRoleUserDTO;
 import TrackHours.API.DTO.User.UpdateUserDTO;
+import TrackHours.API.Exceptions.UsersExceptions.EmailAlreadyExistsException;
+import TrackHours.API.Exceptions.UsersExceptions.InvalidPasswordException;
+import TrackHours.API.Exceptions.UsersExceptions.UserDatasInvalid;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.User;
 import TrackHours.API.enumTypes.roles.UserRole;
 import TrackHours.API.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,14 +30,23 @@ public class UserService {
     private BCryptPasswordEncoder passwordEncoder;
 
     // Create User
-    public Long createUser(CreateUserDTO createUserDTO) {
-        // Cryptographic password
-        var hashedPassword = passwordEncoder.encode(createUserDTO.password());
-        // DTO -> Entity
-        var userCreated = new User(createUserDTO.name(), createUserDTO.email(), hashedPassword, createUserDTO.role());
-        var userSaved = userRepository.save(userCreated);
+    public User createUser(CreateUserDTO createUserDTO) {
+        if (createUserDTO == null
+                || createUserDTO.name() == null
+                || createUserDTO.email() == null
+                || createUserDTO.password() == null
+                || createUserDTO.role() == null) {
+            throw new UserDatasInvalid("Dados do usuário inválidos");
+        }
 
-        return userSaved.getId();
+        if (userRepository.existsByEmail(createUserDTO.email())) {
+            throw new EmailAlreadyExistsException("E-mail já cadastrado");
+        }
+
+        var hashedPassword = passwordEncoder.encode(createUserDTO.password());
+        var dtoToUser = new User(createUserDTO.name(), createUserDTO.email(), hashedPassword, createUserDTO.role());
+
+        return userRepository.save(dtoToUser);
     }
 
     // Find All User
@@ -40,8 +55,9 @@ public class UserService {
     }
 
     // Find By ID
-    public Optional<User> findUserById(Long id) {
-        return userRepository.findById(id);
+    public User findUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
     }
 
     // Find By User Logged
@@ -96,5 +112,32 @@ public class UserService {
         }
 
         return userExists;
+    }
+
+    // Change password user logged
+    public boolean changePassword(Authentication authentication, ChangePasswordDTO changePasswordDTO) {
+        String email = authentication.getName();
+
+        var userLogged = userRepository.findUserByEmail(email);
+
+        if (userLogged.isPresent()) {
+            var user = userLogged.get();
+
+            if (!passwordEncoder.matches(changePasswordDTO.currentPassword(), user.getPassword())) {
+                throw new InvalidPasswordException("Senha atual incorreta");
+            }
+
+            if (changePasswordDTO.newPassword().length() < 6) {
+                throw new InvalidPasswordException("A nova senha deve ter pelo menos 6 caracteres");
+            }
+
+            String hashedPassword = passwordEncoder.encode(changePasswordDTO.newPassword());
+            user.setPassword(hashedPassword);
+            userRepository.save(user);
+
+            return true;
+        }
+
+        throw new UserNotFoundException("Usuário não encontrado");
     }
 }
