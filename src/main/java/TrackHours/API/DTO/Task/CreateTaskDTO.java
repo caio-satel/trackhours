@@ -14,6 +14,5 @@ public record CreateTaskDTO(String name,
                             @JsonFormat(pattern = "dd/MM/yyyy")
                             LocalDate endDate,
                             Long projectId,
-                            StatusTask status,
                             List<Long> collaborators) {
 }
