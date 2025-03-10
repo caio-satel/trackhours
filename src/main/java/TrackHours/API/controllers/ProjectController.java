@@ -3,11 +3,12 @@ package TrackHours.API.controllers;
 import TrackHours.API.DTO.Project.CreateProjectDTO;
 import TrackHours.API.DTO.Project.ProjectResponseDTO;
 import TrackHours.API.DTO.Project.UpdateProjectDTO;
-import TrackHours.API.DTO.User.UpdateUserDTO;
 import TrackHours.API.DTO.mapper.ProjectMapper;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.services.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,9 +28,11 @@ public class ProjectController {
     private ProjectService projectService;
 
     @PostMapping
-    public ResponseEntity<Project> createNewProject(@RequestBody CreateProjectDTO createProjectDTO) {
-        var projectId = projectService.createProject(createProjectDTO);
-        return ResponseEntity.created(URI.create("/projects/" + projectId.toString())).build();
+    public ResponseEntity<ProjectResponseDTO> createNewProject(@RequestBody CreateProjectDTO createProjectDTO) {
+        var projectCreated = projectService.createProject(createProjectDTO);
+        var response = map.projectDtoToProject(projectCreated);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -45,27 +48,24 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<List<ProjectResponseDTO>> getById(@PathVariable Long id) {
-        var projectById = projectService.findProjectById(id);
+    public ResponseEntity<ProjectResponseDTO> getById(@PathVariable Long id) {
+        try {
+            var project = projectService.findProjectById(id);
+            var response = map.projectDtoToProject(project);
 
-        List<ProjectResponseDTO> projectByIdResponse = projectById
-                .stream()
-                .map(projectId -> map.projectDtoToProject(projectId))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok().body(projectByIdResponse);
-
+            return ResponseEntity.ok(response);
+        } catch (UserNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateProjectById(@PathVariable Long id, @RequestBody UpdateProjectDTO updateProjectDTO) {
-        boolean projectUpdated = projectService.updateProjectById(id, updateProjectDTO);
+    public ResponseEntity<ProjectResponseDTO> updateProjectById(@PathVariable Long id, @RequestBody UpdateProjectDTO updateProjectDTO) {
+        Project updatedProject = projectService.updateProjectById(id, updateProjectDTO);
 
-        if (!projectUpdated) {
-            return ResponseEntity.notFound().build();
-        }
+        ProjectResponseDTO projectResponseDTO = map.projectDtoToProject(updatedProject);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(projectResponseDTO);
     }
 
     @DeleteMapping("/{id}")
