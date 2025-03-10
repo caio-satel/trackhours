@@ -1,6 +1,7 @@
 package TrackHours.API.services;
 
 import TrackHours.API.DTO.Dashboard.DashboardProjectDTO;
+import TrackHours.API.DTO.Dashboard.LateTasksCountDTO;
 import TrackHours.API.DTO.mapper.DashboardMapper;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.Release;
@@ -64,4 +65,11 @@ public class DashboardService {
         long minutes = (totalSeconds % 3600) / 60;
         return String.format("%02d:%02d", hours, minutes);
     }
+
+    public LateTasksCountDTO getLateTasksCount(Authentication authentication) {
+        String email = authentication.getName();
+        Long lateTasksCount = dashboardRepository.countLateTasksByUser(email);
+        return new LateTasksCountDTO(lateTasksCount);
+    }
+
 }
