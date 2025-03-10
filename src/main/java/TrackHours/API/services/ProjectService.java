@@ -4,6 +4,8 @@ import TrackHours.API.DTO.Project.CreateProjectDTO;
 import TrackHours.API.DTO.Project.ProjectResponseDTO;
 import TrackHours.API.DTO.Project.UpdateProjectDTO;
 import TrackHours.API.DTO.User.UpdateUserDTO;
+import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.User;
 import TrackHours.API.enumTypes.projects.StatusProject;
@@ -24,9 +26,9 @@ public class ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    public Long createProject(CreateProjectDTO createProjectDTO) {
+    public Project createProject(CreateProjectDTO createProjectDTO) {
         User responsibleUser = userRepository.findById(createProjectDTO.responsibleUser())
-                .orElseThrow(() -> new RuntimeException("Usuário com esse ID não encontrado: " + createProjectDTO.responsibleUser()));
+                .orElseThrow(() -> new UserNotFoundException("Usuário com esse ID não encontrado: " + createProjectDTO.responsibleUser()));
 
         var projectCreated = new Project(
                 createProjectDTO.name(),
@@ -35,9 +37,8 @@ public class ProjectService {
                 responsibleUser,
                 StatusProject.PLANNED,
                 createProjectDTO.priority());
-        var projectSaved = projectRepository.save(projectCreated);
 
-        return projectSaved.getId();
+        return projectRepository.save(projectCreated);
     }
 
     // Find All User
@@ -46,39 +47,27 @@ public class ProjectService {
     }
 
     // Find By ID
-    public Optional<Project> findProjectById(Long id) {
-        return projectRepository.findById(id);
+    public Project findProjectById(Long id) {
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado - ID: " + id));
     }
 
     // Update User By ID
-    public boolean updateProjectById(Long id, UpdateProjectDTO updateProjectDTO) {
-        var projectEntity = projectRepository.findById(id);
+    public Project updateProjectById(Long id, UpdateProjectDTO updateProjectDTO) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado"));
 
-        if(projectEntity.isPresent()) {
-            var project = projectEntity.get();
+        User responsibleUser = userRepository.findById(updateProjectDTO.responsibleUser())
+                .orElseThrow(() -> new UserNotFoundException("Usuário responsável não encontrado"));
 
-            var userEntity = userRepository.findById(updateProjectDTO.responsibleUser());
-            if (userEntity.isEmpty()) {
-                return false; // Usuário não foi encontrado
-            }
+        project.setName(updateProjectDTO.name());
+        project.setStartDate(updateProjectDTO.startDate());
+        project.setEndDate(updateProjectDTO.endDate());
+        project.setResponsibleUser(responsibleUser);
+        project.setPriority(updateProjectDTO.priority());
+        project.setStatus(updateProjectDTO.status());
 
-            if (updateProjectDTO.name() != null
-                    && updateProjectDTO.startDate() != null
-                    && updateProjectDTO.endDate() != null
-                    && updateProjectDTO.priority() != null) {
-                project.setName(updateProjectDTO.name());
-                project.setStartDate(updateProjectDTO.startDate());
-                project.setEndDate(updateProjectDTO.endDate());
-                project.setResponsibleUser(userEntity.get());
-                project.setPriority(updateProjectDTO.priority());
-                project.setStatus(updateProjectDTO.status());
-
-                projectRepository.save(project);
-
-                return true;
-            }
-        }
-        return false;
+        return projectRepository.save(project);
     }
 
     // Delete By ID
