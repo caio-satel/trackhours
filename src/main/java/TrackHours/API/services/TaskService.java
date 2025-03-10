@@ -77,7 +77,7 @@ public class TaskService {
     }
 
     // Update Task by ID
-    public boolean updateTaskById(Long id, UpdateTaskDTO updateTaskDTO) {
+    public Task updateTaskById(Long id, UpdateTaskDTO updateTaskDTO) {
         var taskEntity = taskRepository.findById(id);
 
         if (taskEntity.isPresent()) {
@@ -110,10 +110,10 @@ public class TaskService {
                 List<Long> newCollaboratorIds = updateTaskDTO.collaborators();
 
                 // Remove colaboradores que não estão mais na lista
-                List<User> currentCollaborators = new ArrayList<>(task.getIntegrantes()); // Cópia da lista atual
+                List<User> currentCollaborators = new ArrayList<>(task.getIntegrantes());
                 for (User collaborator : currentCollaborators) {
                     if (!newCollaboratorIds.contains(collaborator.getId())) {
-                        task.removeCollaborator(collaborator); // Remove o colaborador
+                        task.removeCollaborator(collaborator);
                     }
                 }
 
@@ -121,15 +121,15 @@ public class TaskService {
                 List<User> collaboratorsToAdd = userRepository.findAllById(newCollaboratorIds);
                 for (User collaborator : collaboratorsToAdd) {
                     if (!task.getIntegrantes().contains(collaborator)) {
-                        task.addCollaborator(collaborator); // Adiciona o colaborador
+                        task.addCollaborator(collaborator);
                     }
                 }
             }
 
             taskRepository.save(task);
-            return true;
+            return task;
         }
-        return false;
+        return null;
     }
 
 
