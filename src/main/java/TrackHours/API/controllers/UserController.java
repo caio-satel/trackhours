@@ -2,9 +2,14 @@ package TrackHours.API.controllers;
 
 import TrackHours.API.DTO.User.*;
 import TrackHours.API.DTO.mapper.UserMapper;
+import TrackHours.API.Exceptions.UsersExceptions.EmailAlreadyExistsException;
+import TrackHours.API.Exceptions.UsersExceptions.InvalidPasswordException;
+import TrackHours.API.Exceptions.UsersExceptions.UserDatasInvalid;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.User;
 import TrackHours.API.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +29,15 @@ public class UserController {
     private UserService userService;
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody CreateUserDTO createUserDTO) {
-        var userId = userService.createUser(createUserDTO);
-        return ResponseEntity.created(URI.create("/users/" + userId.toString())).build();
+    public ResponseEntity<?> createUser(@RequestBody CreateUserDTO createUserDTO) {
+        try {
+            User user = userService.createUser(createUserDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        } catch (EmailAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (UserDatasInvalid e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping
@@ -42,24 +53,28 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> findUserById(@PathVariable Long id) {
-        var userById = userService.findUserById(id);
+    public ResponseEntity<UserNoProjectsResponseDTO> findUserById(@PathVariable Long id) {
+        try {
+            var user = userService.findUserById(id);
+            var response = map.userDtoToUser(user);
 
-        if (userById.isPresent()) {
-            return ResponseEntity.ok(userById.get());
-        } else {
+            return ResponseEntity.ok(response);
+        } catch (UserNotFoundException ex) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @GetMapping("/userLogged")
     public ResponseEntity<UserLoggedDTO> getLoggedUser(Authentication authentication) {
-        String email = authentication.getName(); // Email do usuário autenticado
-        User user = (User) userService.findByEmail(email); // Busca no banco pelo email
+        try {
+            String email = authentication.getName();
+            User user = (User) userService.findByEmail(email);
+            UserLoggedDTO response = new UserLoggedDTO(user.getName(), user.getRole());
 
-        UserLoggedDTO response = new UserLoggedDTO(user.getName(), user.getRole());
-
-        return ResponseEntity.ok().body(response);
+            return ResponseEntity.ok().body(response);
+        } catch (UserNotFoundException ex) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PutMapping("/{id}")
@@ -70,7 +85,7 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/role/{id}")
@@ -81,7 +96,7 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
@@ -92,6 +107,23 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/change-password")
+    public ResponseEntity<Object> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO, Authentication authentication) {
+        try {
+            boolean passwordChanged = userService.changePassword(authentication, changePasswordDTO);
+
+            if (passwordChanged) {
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest().body("Falha ao alterar a senha");
+            }
+        } catch (InvalidPasswordException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
