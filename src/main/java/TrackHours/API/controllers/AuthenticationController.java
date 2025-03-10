@@ -6,6 +6,8 @@ import TrackHours.API.entities.User;
 import TrackHours.API.enumTypes.roles.UserRole;
 import TrackHours.API.repositories.UserRepository;
 import TrackHours.API.security.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("auth")
+@Tag(name = "Autenticação", description = "Endpoints de autenticação")
 public class AuthenticationController {
 
     @Autowired
@@ -37,9 +40,15 @@ public class AuthenticationController {
     @Autowired
     private TokenService tokenService;
 
+    @Operation(summary = "Realizar login")
     @PostMapping("/login")
     public ResponseEntity<Object> login(@RequestBody @Validated AuthenticationDTO data) {
         try {
+            var emailUser = userRepository.findUserByEmail(data.email());
+            if (emailUser.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("E-mail não encontrado");
+            }
+
             var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
             var auth = authenticationManager.authenticate(usernamePassword);
 
