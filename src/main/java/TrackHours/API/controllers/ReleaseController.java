@@ -8,6 +8,8 @@ import TrackHours.API.DTO.Task.UpdateTaskDTO;
 import TrackHours.API.DTO.mapper.ReleaseMapper;
 import TrackHours.API.entities.Release;
 import TrackHours.API.services.ReleaseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,6 +20,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/releases")
+@Tag(name = "Lançamento de Horas", description = "Endpoints de lançamento de horas")
 public class ReleaseController {
 
     @Autowired
@@ -26,6 +29,7 @@ public class ReleaseController {
     @Autowired
     private ReleaseMapper map;
 
+    @Operation(summary = "Criar lançamento de horas")
     @PostMapping
     private ResponseEntity<ReleaseDTO> newRelease(@RequestBody CreateReleaseDTO createReleaseDTO, Authentication userAuthenticated) {
         Release release = releaseService.createRelease(createReleaseDTO, userAuthenticated);
@@ -33,6 +37,7 @@ public class ReleaseController {
         return ResponseEntity.created(URI.create("/tasks/" + release.getId())).body(releaseDTO);
     }
 
+    @Operation(summary = "Obter lista de todos lançamentos de horas")
     @GetMapping
     private ResponseEntity<List<ReleaseDTO>> getAllReleases() {
         List<Release> listReleases = releaseService.listAllReleases();
@@ -45,6 +50,7 @@ public class ReleaseController {
         return ResponseEntity.ok().body(releaseResponse);
     }
 
+    @Operation(summary = "Obter lista de lançamento de horas do usuário logado")
     @GetMapping("/byUser")
     public ResponseEntity<List<ReleaseDTO>> getReleasesByUserLogged(Authentication authentication) {
         try {
@@ -61,6 +67,7 @@ public class ReleaseController {
         }
     }
 
+    @Operation(summary = "Obter lançamento de horas por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ReleaseDTO> releaseById(@PathVariable Long id) {
         Release release = releaseService.getReleaseById(id);
@@ -68,6 +75,7 @@ public class ReleaseController {
         return ResponseEntity.ok(releaseDTO);
     }
 
+    @Operation(summary = "Atualizar lançamento de horas por ID")
     @PutMapping("/{id}")
     public ResponseEntity<ReleaseDTO> updateReleaseById(@PathVariable Long id, @RequestBody UpdateReleaseDTO updateReleaseDTO, Authentication userAuthenticated) {
         Release updateRelease = releaseService.updateReleaseByID(id, updateReleaseDTO, userAuthenticated);
@@ -77,6 +85,7 @@ public class ReleaseController {
         return ResponseEntity.ok().body(releaseDtoUpdated);
     }
 
+    @Operation(summary = "Deletar lançamento de horas por ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReleaseById(
             @PathVariable Long id,

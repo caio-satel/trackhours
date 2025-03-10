@@ -7,6 +7,8 @@ import TrackHours.API.DTO.mapper.ProjectMapper;
 import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.services.ProjectService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/projects")
+@Tag(name = "Projetos", description = "Endpoints de projetos")
 public class ProjectController {
 
     @Autowired
@@ -27,6 +30,7 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
+    @Operation(summary = "Criar novo projeto (Apenas Administradores)")
     @PostMapping
     public ResponseEntity<ProjectResponseDTO> createNewProject(@RequestBody CreateProjectDTO createProjectDTO) {
         var projectCreated = projectService.createProject(createProjectDTO);
@@ -35,6 +39,7 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "Obter lista projetos (Apenas Administradores)")
     @GetMapping
     public ResponseEntity<List<ProjectResponseDTO>> getAllProjects() {
         List<Project> listProjects = projectService.findAll();
@@ -47,6 +52,7 @@ public class ProjectController {
         return ResponseEntity.ok().body(projectsResponse);
     }
 
+    @Operation(summary = "Obter projeto por ID (Apenas Administradores)")
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponseDTO> getById(@PathVariable Long id) {
         try {
@@ -59,6 +65,7 @@ public class ProjectController {
         }
     }
 
+    @Operation(summary = "Atualizar projeto por ID (Apenas Administradores)")
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponseDTO> updateProjectById(@PathVariable Long id, @RequestBody UpdateProjectDTO updateProjectDTO) {
         Project updatedProject = projectService.updateProjectById(id, updateProjectDTO);
@@ -68,6 +75,7 @@ public class ProjectController {
         return ResponseEntity.ok(projectResponseDTO);
     }
 
+    @Operation(summary = "Deletar projeto por ID (Apenas Administradores)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         boolean projectExists = projectService.deleteById(id);

@@ -9,6 +9,8 @@ import TrackHours.API.DTO.mapper.TaskMapper;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.Task;
 import TrackHours.API.services.TaskService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/tasks")
+@Tag(name = "Tarefas", description = "Endpoints de tarefas")
 public class TaskController {
 
     @Autowired
@@ -28,6 +31,7 @@ public class TaskController {
     @Autowired
     private TaskMapper map;
 
+    @Operation(summary = "Criar nova tarefa (Apenas administradores)")
     @PostMapping
     public ResponseEntity<TaskDTO> newTask(@RequestBody CreateTaskDTO createTaskDTO) {
         Task task = taskService.createTask(createTaskDTO);
@@ -35,12 +39,14 @@ public class TaskController {
         return ResponseEntity.created(URI.create("/tasks/" + task.getId())).body(taskDTO);
     }
 
+    @Operation(summary = "Obter tarefa por ID (Apenas administradores)")
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> getTask(@PathVariable Long id) {
         TaskDTO taskDTO = taskService.getTaskDTOById(id);
         return ResponseEntity.ok(taskDTO);
     }
 
+    @Operation(summary = "Obter lista de tarefas (Apenas administradores)")
     @GetMapping
     public ResponseEntity<List<TaskDTO>> getAllTask () {
         List<Task> listTasks = taskService.getAllTasks();
@@ -53,6 +59,7 @@ public class TaskController {
         return ResponseEntity.ok().body(taskResponse);
     }
 
+    @Operation(summary = "Obter lista de tarefas do usuário logado")
     @GetMapping("/byUser")
     public ResponseEntity<List<TaskDTO>> getTasksForCurrentUser(Authentication authentication) {
         List<Task> tasks = taskService.getTasksForCurrentUser(authentication);
@@ -64,17 +71,20 @@ public class TaskController {
         return ResponseEntity.ok(taskDTOs);
     }
 
+    @Operation(summary = "Atualizar tarefa por ID (Apenas administradores)")
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateTaskById(@PathVariable Long id, @RequestBody UpdateTaskDTO updateTaskDTO) {
-        boolean taskUpdated = taskService.updateTaskById(id, updateTaskDTO);
+    public ResponseEntity<TaskDTO> updateTaskById(@PathVariable Long id, @RequestBody UpdateTaskDTO updateTaskDTO) {
+        Task updatedTask = taskService.updateTaskById(id, updateTaskDTO);
 
-        if (!taskUpdated) {
+        if (updatedTask == null) {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.noContent().build();
+        TaskDTO taskDTO = map.taskToTaskDTO(updatedTask);
+        return ResponseEntity.ok(taskDTO);
     }
 
+    @Operation(summary = "Deletar tarefa por ID (Apenas administradores)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTaskById(@PathVariable Long id) {
         boolean taskExists = taskService.deleteById(id);

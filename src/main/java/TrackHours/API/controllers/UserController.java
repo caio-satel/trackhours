@@ -8,6 +8,8 @@ import TrackHours.API.Exceptions.UsersExceptions.UserDatasInvalid;
 import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.User;
 import TrackHours.API.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
+@Tag(name = "Usuários", description = "Endpoints de usuários")
 public class UserController {
 
     @Autowired
@@ -28,6 +31,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Operation(summary = "Criar novo usuário (Apenas administradores)")
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody CreateUserDTO createUserDTO) {
         try {
@@ -40,6 +44,7 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Obter lista de usuários (Apenas administradores)")
     @GetMapping
     public ResponseEntity<List<UserNoProjectsResponseDTO>> listUsers() {
         List<User> listUsers = userService.listUsers();
@@ -52,6 +57,7 @@ public class UserController {
         return ResponseEntity.ok().body(usersResponse);
     }
 
+    @Operation(summary = "Obter usuário por ID (Apenas administradores)")
     @GetMapping("/{id}")
     public ResponseEntity<UserNoProjectsResponseDTO> findUserById(@PathVariable Long id) {
         try {
@@ -64,6 +70,7 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Obter ID e Nome do usuário logado")
     @GetMapping("/userLogged")
     public ResponseEntity<UserLoggedDTO> getLoggedUser(Authentication authentication) {
         try {
@@ -77,6 +84,7 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Atualizar usuário por ID (Apenas administradores)")
     @PutMapping("/{id}")
     public ResponseEntity<Void> uptadeUserById(@PathVariable Long id, @RequestBody UpdateUserDTO updateUserDTO) {
         boolean userUpdated = userService.updateUserById(id, updateUserDTO);
@@ -88,6 +96,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Atualizar role de usuário por ID (Apenas administradores)")
     @PutMapping("/role/{id}")
     public ResponseEntity<Void> updateRoleUser(@PathVariable Long id, @RequestBody UpdateRoleUserDTO updateRoleUserDTO) {
         boolean userUpdated = userService.updateRoleUser(id, updateRoleUserDTO);
@@ -99,6 +108,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Deletar usuário por ID (Apenas administradores)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         boolean userExists = userService.deleteById(id);
@@ -110,6 +120,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Mudar a senha do usuário logado")
     @PatchMapping("/change-password")
     public ResponseEntity<Object> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO, Authentication authentication) {
         try {
