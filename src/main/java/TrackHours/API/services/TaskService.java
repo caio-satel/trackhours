@@ -163,7 +163,7 @@ public class TaskService {
             throw new IllegalStateException("A tarefa não pode ser excluída porque não está concluída.");
         }
 
-        taskRepository.delete(task);
+        taskRepository.deleteById(id);
     }
 
 }
