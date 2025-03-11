@@ -59,7 +59,7 @@ public class ReleaseService {
 
     // Find all releases
     public List<Release> listAllReleases () {
-        return releaseRepository.findAll();
+        return releaseRepository.findAllNotDeleted();
     }
 
     // Find all releases by user logged
@@ -74,18 +74,17 @@ public class ReleaseService {
 
     // Find Release by ID
     public Release getReleaseById(Long id) {
-        Release release = releaseRepository.findById(id)
+        Release release = releaseRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new RuntimeException("Lançamento não encontrado"));
 
         return release;
     }
 
-    // Update release by ID
-// Update release by ID com usuário logado
+    // Update release by ID com usuário logado
     public Release updateReleaseByID(Long id, UpdateReleaseDTO updateReleaseDTO, Authentication userAuthenticated) {
         // Busca a release pelo ID
-        var releaseEntity = releaseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Release não encontrada com id: " + id));
+        var releaseEntity = releaseRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new RuntimeException("Release não encontrada ou deletada com id: " + id));
 
         // Obtém o usuário autenticado
         String email = userAuthenticated.getName();
@@ -124,14 +123,13 @@ public class ReleaseService {
             releaseEntity.setTask(taskEntity);
         }
 
-        // Salva a release atualizada
         return releaseRepository.save(releaseEntity);
     }
 
     // Delete By ID com validação do usuário autenticado
     public boolean deleteById(Long id, Authentication authentication) {
         // Busca a release pelo ID
-        var release = releaseRepository.findById(id)
+        var release = releaseRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new RuntimeException("Release não encontrada com id: " + id));
 
         // Obtém o usuário autenticado
@@ -144,9 +142,8 @@ public class ReleaseService {
             throw new RuntimeException("Usuário não faz parte da tarefa. Não é possível deletar o lançamento!");
         }
 
-        // Deleta a release
         releaseRepository.deleteById(id);
 
-        return true; // Retorna true para indicar que a exclusão foi bem-sucedida
+        return true;
     }
 }
