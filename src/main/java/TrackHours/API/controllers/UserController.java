@@ -57,6 +57,18 @@ public class UserController {
         return ResponseEntity.ok().body(usersResponse);
     }
 
+    @Operation(summary = "Obter lista de usuários ADMIN (Apenas administradores)")
+    @GetMapping("/admins")
+    public ResponseEntity<List<UserNoProjectsResponseDTO>> listAdmins() {
+        List<User> admins = userService.findAllAdmins();
+
+        List<UserNoProjectsResponseDTO> adminsResponse = admins.stream()
+                .map(admin -> map.userDtoToUser(admin))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok().body(adminsResponse);
+    }
+
     @Operation(summary = "Obter usuário por ID (Apenas administradores)")
     @GetMapping("/{id}")
     public ResponseEntity<UserNoProjectsResponseDTO> findUserById(@PathVariable Long id) {
@@ -110,14 +122,17 @@ public class UserController {
 
     @Operation(summary = "Deletar usuário por ID (Apenas administradores)")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        boolean userExists = userService.deleteById(id);
-
-        if (!userExists) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Object> deleteById(@PathVariable Long id) {
+        try {
+            userService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro interno no servidor. Tente novamente mais tarde."); // Retorna 500 Internal Server Error
         }
-
-        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Mudar a senha do usuário logado")

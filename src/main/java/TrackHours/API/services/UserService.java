@@ -8,8 +8,12 @@ import TrackHours.API.Exceptions.UsersExceptions.EmailAlreadyExistsException;
 import TrackHours.API.Exceptions.UsersExceptions.InvalidPasswordException;
 import TrackHours.API.Exceptions.UsersExceptions.UserDatasInvalid;
 import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
+import TrackHours.API.entities.Project;
+import TrackHours.API.entities.Task;
 import TrackHours.API.entities.User;
 import TrackHours.API.enumTypes.roles.UserRole;
+import TrackHours.API.repositories.ProjectRepository;
+import TrackHours.API.repositories.TaskRepository;
 import TrackHours.API.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -25,6 +29,12 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -51,12 +61,17 @@ public class UserService {
 
     // Find All User
     public List<User> listUsers() {
-        return userRepository.findAll();
+        return userRepository.findAllNotDeleted();
+    }
+
+    // Find all Admins
+    public List<User> findAllAdmins() {
+        return userRepository.findAllAdminsNotDeleted();
     }
 
     // Find By ID
     public User findUserById(Long id) {
-        return userRepository.findById(id)
+        return userRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
     }
 
@@ -104,14 +119,23 @@ public class UserService {
     }
 
     // Delete By ID
-    public boolean deleteById(Long id) {
-        var userExists = userRepository.existsById(id);
+    public void deleteById(Long id) {
+        User user = userRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado ou foi excluído"));
 
-        if(userExists) {
-            userRepository.deleteById(id);
+        List<Project> projects = projectRepository.findByResponsibleUserAndNotDeleted(user);
+
+        if (!projects.isEmpty()) {
+            throw new IllegalStateException("Não é possível excluir o usuário. Ele é responsável por um ou mais projetos.");
         }
 
-        return userExists;
+        List<Task> tasks = taskRepository.findByUserAndNotDeleted(user);
+        for (Task task : tasks) {
+            task.getIntegrantes().remove(user);
+            taskRepository.save(task);
+        }
+
+        userRepository.deleteById(id);
     }
 
     // Change password user logged
