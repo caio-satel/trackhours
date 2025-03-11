@@ -4,6 +4,7 @@ import TrackHours.API.DTO.Project.CreateProjectDTO;
 import TrackHours.API.DTO.Project.ProjectResponseDTO;
 import TrackHours.API.DTO.Project.UpdateProjectDTO;
 import TrackHours.API.DTO.mapper.ProjectMapper;
+import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
 import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.services.ProjectService;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -67,23 +69,28 @@ public class ProjectController {
 
     @Operation(summary = "Atualizar projeto por ID (Apenas Administradores)")
     @PutMapping("/{id}")
-    public ResponseEntity<ProjectResponseDTO> updateProjectById(@PathVariable Long id, @RequestBody UpdateProjectDTO updateProjectDTO) {
-        Project updatedProject = projectService.updateProjectById(id, updateProjectDTO);
-
-        ProjectResponseDTO projectResponseDTO = map.projectDtoToProject(updatedProject);
-
-        return ResponseEntity.ok(projectResponseDTO);
+    public ResponseEntity<Object> updateProjectById(@PathVariable Long id, @RequestBody UpdateProjectDTO updateProjectDTO) {
+        try {
+            Project updatedProject = projectService.updateProjectById(id, updateProjectDTO);
+            ProjectResponseDTO projectResponseDTO = map.projectDtoToProject(updatedProject);
+            return ResponseEntity.ok(projectResponseDTO);
+        } catch (ProjectNotFoundException | UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @Operation(summary = "Deletar projeto por ID (Apenas Administradores)")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
-        boolean projectExists = projectService.deleteById(id);
-
-        if (!projectExists) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Object> deleteById(@PathVariable Long id, Authentication authentication) {
+        try {
+            projectService.deleteById(id, authentication);
+            return ResponseEntity.noContent().build();
+        } catch (ProjectNotFoundException | UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        return ResponseEntity.noContent().build();
     }
 }
