@@ -37,4 +37,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.deleted = false")
     List<Task> findByProjectIdAndNotDeleted(@Param("projectId") Long projectId);
+
+    @Query("SELECT t FROM Task t JOIN t.integrantes u WHERE u = :user AND t.deleted = false")
+    List<Task> findByUserAndNotDeleted(@Param("user") User user);
 }
