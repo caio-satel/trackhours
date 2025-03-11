@@ -6,6 +6,8 @@ import TrackHours.API.DTO.Task.UpdateTaskDTO;
 import TrackHours.API.DTO.User.UpdateUserDTO;
 import TrackHours.API.DTO.User.UserDTO;
 import TrackHours.API.DTO.mapper.TaskMapper;
+import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
+import TrackHours.API.Exceptions.Tasks.TaskNotFoundException;
 import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.Task;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,11 +43,20 @@ public class TaskService {
     // Create Task
     public Task createTask(CreateTaskDTO createTaskDTO) {
         Project project = projectRepository.findById(createTaskDTO.projectId())
-                .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+                .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado"));
+
+        // Valida as datas da tarefa em relação ao projeto
+        if (createTaskDTO.startDate().isBefore(project.getStartDate())) {
+            throw new IllegalArgumentException("A data de início da tarefa não pode ser anterior à data de início do projeto.");
+        }
+        if (createTaskDTO.endDate().isAfter(project.getEndDate())) {
+            throw new IllegalArgumentException("A data de término da tarefa não pode ser posterior à data de término do projeto.");
+        }
 
         List<User> collaborators = userRepository.findAllById(createTaskDTO.collaborators());
 
-        var taskCreated = new Task(createTaskDTO.name(),
+        var taskCreated = new Task(
+                createTaskDTO.name(),
                 createTaskDTO.startDate(),
                 createTaskDTO.endDate(),
                 project,
@@ -57,15 +69,15 @@ public class TaskService {
 
     // Find Task by ID
     public TaskDTO getTaskDTOById(Long id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+        Task task = taskRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new TaskNotFoundException("Tarefa não encontrada ou foi desativada"));
 
         return map.taskToTaskDTO(task);
     }
 
     // Find All Tasks
     public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+        return taskRepository.findAllNotDeleted();
     }
 
     // Find All Tasks by User Logged
@@ -90,10 +102,8 @@ public class TaskService {
 
     // Update Task by ID
     public Task updateTaskById(Long id, UpdateTaskDTO updateTaskDTO) {
-        var taskEntity = taskRepository.findById(id);
-
-        if (taskEntity.isPresent()) {
-            var task = taskEntity.get();
+        var task = taskRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new TaskNotFoundException("Tarefa não encontrada ou foi desativada"));
 
             // Atualiza apenas os campos que não são nulos no DTO
             if (updateTaskDTO.name() != null) {
@@ -112,7 +122,7 @@ public class TaskService {
             // Atualiza o projeto, se fornecido
             if (updateTaskDTO.projectId() != null) {
                 var project = projectRepository.findById(updateTaskDTO.projectId())
-                        .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+                        .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado"));
                 task.setProject(project);
             }
 
@@ -140,20 +150,20 @@ public class TaskService {
 
             taskRepository.save(task);
             return task;
-        }
-        return null;
     }
 
 
     // Delete By ID
-    public boolean deleteById(Long id) {
-        var task = taskRepository.existsById(id);
+    public void deleteById(Long id) {
+        var task = taskRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new TaskNotFoundException("Tarefa não encontrada ou foi desativada"));
 
-        if(task) {
-            projectRepository.deleteById(id);
+        // Verifica se a tarefa está concluída
+        if (task.getStatus() != StatusTask.DONE) {
+            throw new IllegalStateException("A tarefa não pode ser excluída porque não está concluída.");
         }
 
-        return task;
+        taskRepository.delete(task);
     }
 
 }

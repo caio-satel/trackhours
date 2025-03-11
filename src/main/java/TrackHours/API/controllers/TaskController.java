@@ -6,18 +6,22 @@ import TrackHours.API.DTO.Task.TaskDTO;
 import TrackHours.API.DTO.Task.UpdateTaskDTO;
 import TrackHours.API.DTO.User.UpdateRoleUserDTO;
 import TrackHours.API.DTO.mapper.TaskMapper;
+import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
+import TrackHours.API.Exceptions.Tasks.TaskNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.Task;
 import TrackHours.API.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -33,10 +37,18 @@ public class TaskController {
 
     @Operation(summary = "Criar nova tarefa (Apenas administradores)")
     @PostMapping
-    public ResponseEntity<TaskDTO> newTask(@RequestBody CreateTaskDTO createTaskDTO) {
-        Task task = taskService.createTask(createTaskDTO);
-        TaskDTO taskDTO = map.taskToTaskDTO(task);
-        return ResponseEntity.created(URI.create("/tasks/" + task.getId())).body(taskDTO);
+    public ResponseEntity<Object> newTask(@RequestBody CreateTaskDTO createTaskDTO) {
+        try {
+            Task task = taskService.createTask(createTaskDTO);
+            TaskDTO taskDTO = map.taskToTaskDTO(task);
+            return ResponseEntity.created(URI.create("/tasks/" + task.getId())).body(taskDTO);
+        } catch (ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ocorreu um erro ao criar a tarefa");
+        }
     }
 
     @Operation(summary = "Obter tarefa por ID (Apenas administradores)")
@@ -97,14 +109,14 @@ public class TaskController {
 
     @Operation(summary = "Deletar tarefa por ID (Apenas administradores)")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTaskById(@PathVariable Long id) {
-        boolean taskExists = taskService.deleteById(id);
-
-        if (!taskExists) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> deleteTaskById(@PathVariable Long id) {
+        try {
+            taskService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (TaskNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-
-        return ResponseEntity.noContent().build();
     }
-
 }

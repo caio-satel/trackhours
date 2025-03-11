@@ -4,10 +4,11 @@ import TrackHours.API.enumTypes.tasks.StatusTask;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +20,9 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@SQLDelete(sql = "UPDATE tarefas SET deleted = true WHERE id=?")
+@FilterDef(name = "deletedTaskFilter", parameters = @ParamDef(name = "isDeleted", type = Boolean.class))
+@Filter(name = "deletedTaskFilter", condition = "deleted = :isDeleted")
 public class Task {
 
     @Id
@@ -51,6 +55,8 @@ public class Task {
 
     @ManyToMany(mappedBy = "tasks")
     private List<User> integrantes = new ArrayList<>();
+
+    private boolean deleted = Boolean.FALSE;
 
     public Task(String name,
                 LocalDate startDate,
