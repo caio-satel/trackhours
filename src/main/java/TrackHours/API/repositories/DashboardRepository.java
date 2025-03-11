@@ -12,12 +12,13 @@ public interface DashboardRepository extends JpaRepository<Project, Long> {
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN p.tasks t " +
             "JOIN t.integrantes u " +
-            "WHERE u.email = :email")
+            "WHERE u.email = :email AND t.status <> 'DONE'")
     List<Project> findProjectsAndTasksByUser(@Param("email") String email);
 
     @Query("SELECT COUNT(t) FROM Task t " +
             "JOIN t.integrantes u " +
-            "WHERE u.email = :email AND t.endDate < CURRENT_DATE")
+            "WHERE u.email = :email AND t.endDate < CURRENT_DATE " +
+            "AND t.status <> 'DONE'")
     Long countLateTasksByUser(@Param("email") String email);
 
 }
