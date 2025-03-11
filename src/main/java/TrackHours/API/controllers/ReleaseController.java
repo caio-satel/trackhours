@@ -87,10 +87,7 @@ public class ReleaseController {
 
     @Operation(summary = "Deletar lançamento de horas por ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReleaseById(
-            @PathVariable Long id,
-            Authentication userAuthenticated
-    ) {
+    public ResponseEntity<Void> deleteReleaseById(@PathVariable Long id, Authentication userAuthenticated) {
         boolean isDeleted = releaseService.deleteById(id, userAuthenticated);
 
         if (isDeleted) {
@@ -99,6 +96,4 @@ public class ReleaseController {
             return ResponseEntity.notFound().build();
         }
     }
-
-
 }
