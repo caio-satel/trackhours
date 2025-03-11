@@ -19,4 +19,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "JOIN t.integrantes u " +
             "WHERE t.project.id = :projectId AND u.email = :email")
     List<Task> findTasksByProjectIdAndUserLogged(@Param("projectId") Long projectId, @Param("email") String email);
+
+    @Query("SELECT t FROM Task t " +
+            "JOIN t.integrantes u " +
+            "WHERE u.email = :email " +
+            "AND t.endDate < CURRENT_DATE " +
+            "AND t.status <> 'DONE'")
+    List<Task> findLateTasksByUser(@Param("email") String email);
 }

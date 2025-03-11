@@ -71,6 +71,17 @@ public class TaskController {
         return ResponseEntity.ok(taskDTOs);
     }
 
+    @GetMapping("/late-tasks")
+    public ResponseEntity<List<TaskDTO>> getLateTasksByUser(Authentication authentication) {
+        List<Task> lateTasks = taskService.getLateTasksByUser(authentication);
+
+        List<TaskDTO> lateTasksDTO = lateTasks.stream()
+                .map(map::taskToTaskDTO)
+                .toList();
+
+        return ResponseEntity.ok(lateTasksDTO);
+    }
+
     @Operation(summary = "Atualizar tarefa por ID (Apenas administradores)")
     @PutMapping("/{id}")
     public ResponseEntity<TaskDTO> updateTaskById(@PathVariable Long id, @RequestBody UpdateTaskDTO updateTaskDTO) {

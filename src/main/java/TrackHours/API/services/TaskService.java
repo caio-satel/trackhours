@@ -6,6 +6,7 @@ import TrackHours.API.DTO.Task.UpdateTaskDTO;
 import TrackHours.API.DTO.User.UpdateUserDTO;
 import TrackHours.API.DTO.User.UserDTO;
 import TrackHours.API.DTO.mapper.TaskMapper;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.Task;
 import TrackHours.API.entities.User;
@@ -67,13 +68,24 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
+    // Find All Tasks by User Logged
     public List<Task> getTasksForCurrentUser(Authentication authentication) {
         String email = authentication.getName();
 
         User user = userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
 
         return taskRepository.findTasksByUser(user);
+    }
+
+    // Find All Late Tasks by User Logged
+    public List<Task> getLateTasksByUser(Authentication authentication) {
+        String email = authentication.getName();
+
+        User user = userRepository.findUserByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
+
+        return taskRepository.findLateTasksByUser(email);
     }
 
     // Update Task by ID
