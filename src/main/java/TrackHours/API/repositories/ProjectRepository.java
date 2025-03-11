@@ -1,6 +1,7 @@
 package TrackHours.API.repositories;
 
 import TrackHours.API.entities.Project;
+import TrackHours.API.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,4 +18,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query("SELECT p FROM Project p WHERE p.id = :id AND p.deleted = false")
     Optional<Project> findByIdAndNotDeleted(@Param("id") Long id);
+
+    @Query("SELECT p FROM Project p WHERE p.responsibleUser = :user AND p.deleted = false")
+    List<Project> findByResponsibleUserAndNotDeleted(@Param("user") User user);
 }
