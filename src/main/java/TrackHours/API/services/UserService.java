@@ -11,7 +11,6 @@ import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
 import TrackHours.API.entities.Task;
 import TrackHours.API.entities.User;
-import TrackHours.API.enumTypes.roles.UserRole;
 import TrackHours.API.repositories.ProjectRepository;
 import TrackHours.API.repositories.TaskRepository;
 import TrackHours.API.repositories.UserRepository;
@@ -22,7 +21,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -99,7 +97,7 @@ public class UserService {
                 return true;
             }
         }
-        return false;
+        throw new UserNotFoundException("Usuário não encontrado");
     }
 
     // Update Role User
@@ -115,7 +113,7 @@ public class UserService {
                 return true;
             }
         }
-        return false;
+        throw new UserNotFoundException("Usuário não encontrado");
     }
 
     // Delete By ID
@@ -163,5 +161,20 @@ public class UserService {
         }
 
         throw new UserNotFoundException("Usuário não encontrado");
+    }
+
+    // Get Total Hours by Users
+    public List<Object[]> getTotalHoursByUser() {
+        return userRepository.getTotalHoursByUser();
+    }
+
+    // Get Total Count of Projects User is responsible
+    public List<Object[]> getTotalProjectsByUser() {
+        return userRepository.getTotalProjectsByUser();
+    }
+
+    // Get Total tasks by users
+    public List<Object[]> getTotalTasksByUser() {
+        return userRepository.getTotalTasksByUser();
     }
 }

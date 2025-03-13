@@ -16,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +30,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Operation(summary = "Criar novo usuário (Apenas administradores)")
+    @Operation(summary = "Criar novo usuário",
+                description = "Corpo da requisição esperado: { \"name\": \"Exemplo\", \"email\": \"exemplo@exemplo.com\", \"password\": \"exemplo123\", \"role\": \"ADMIN\" ou \"USER\" }")
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody CreateUserDTO createUserDTO) {
         try {
@@ -44,7 +44,7 @@ public class UserController {
         }
     }
 
-    @Operation(summary = "Obter lista de usuários (Apenas administradores)")
+    @Operation(summary = "Obter lista de usuários")
     @GetMapping
     public ResponseEntity<List<UserNoProjectsResponseDTO>> listUsers() {
         List<User> listUsers = userService.listUsers();
@@ -57,7 +57,7 @@ public class UserController {
         return ResponseEntity.ok().body(usersResponse);
     }
 
-    @Operation(summary = "Obter lista de usuários ADMIN (Apenas administradores)")
+    @Operation(summary = "Obter lista de usuários com o perfil de Administradores")
     @GetMapping("/admins")
     public ResponseEntity<List<UserNoProjectsResponseDTO>> listAdmins() {
         List<User> admins = userService.findAllAdmins();
@@ -69,7 +69,7 @@ public class UserController {
         return ResponseEntity.ok().body(adminsResponse);
     }
 
-    @Operation(summary = "Obter usuário por ID (Apenas administradores)")
+    @Operation(summary = "Obter usuário por ID")
     @GetMapping("/{id}")
     public ResponseEntity<UserNoProjectsResponseDTO> findUserById(@PathVariable Long id) {
         try {
@@ -78,7 +78,7 @@ public class UserController {
 
             return ResponseEntity.ok(response);
         } catch (UserNotFoundException ex) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
@@ -92,23 +92,21 @@ public class UserController {
 
             return ResponseEntity.ok().body(response);
         } catch (UserNotFoundException ex) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
-    @Operation(summary = "Atualizar usuário por ID (Apenas administradores)")
+    @Operation(summary = "Atualizar usuário por ID", description = "Corpo da requisição esperado: { \"name\": \"Exemplo\", \"email\": \"exemplo@exemplo.com\", \"password\": \"exemplo123\" }")
     @PutMapping("/{id}")
     public ResponseEntity<Void> uptadeUserById(@PathVariable Long id, @RequestBody UpdateUserDTO updateUserDTO) {
         boolean userUpdated = userService.updateUserById(id, updateUserDTO);
 
-        if (!userUpdated) {
-            return ResponseEntity.notFound().build();
-        }
+        if (!userUpdated) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Atualizar role de usuário por ID (Apenas administradores)")
+    @Operation(summary = "Atualizar role de usuário por ID", description = "Corpo da requisição esperado: { \"role\": \"ADMIN\" ou \"USER\" }")
     @PutMapping("/role/{id}")
     public ResponseEntity<Void> updateRoleUser(@PathVariable Long id, @RequestBody UpdateRoleUserDTO updateRoleUserDTO) {
         boolean userUpdated = userService.updateRoleUser(id, updateRoleUserDTO);
@@ -120,7 +118,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Deletar usuário por ID (Apenas administradores)")
+    @Operation(summary = "Deletar usuário por ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteById(@PathVariable Long id) {
         try {
@@ -131,11 +129,11 @@ public class UserController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro interno no servidor. Tente novamente mais tarde."); // Retorna 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro interno no servidor. Tente novamente mais tarde.");
         }
     }
 
-    @Operation(summary = "Mudar a senha do usuário logado")
+    @Operation(summary = "Mudança de senha do usuário logado", description = "Corpo da requisição esperado: { \"currentPassword\": \"exemplo123\", \"newPassword\": \"exemplo\" }")
     @PatchMapping("/change-password")
     public ResponseEntity<Object> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO, Authentication authentication) {
         try {
@@ -151,5 +149,27 @@ public class UserController {
         } catch (UserNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // Reports
+    @Operation(summary = "Obter a lista de usuários com o total de horas lançadas")
+    @GetMapping("/total-hours-by-user")
+    public ResponseEntity<List<Object[]>> getTotalHoursByUser() {
+        List<Object[]> listTotalHoursByUser = userService.getTotalHoursByUser();
+        return ResponseEntity.ok().body(listTotalHoursByUser);
+    }
+
+    @Operation(summary = "Obter a lista de usuários com o total de projetos responsáveis")
+    @GetMapping("/total-projects-by-user")
+    public ResponseEntity<List<Object[]>> getTotalProjectsByUser() {
+        List<Object[]> listTotalProjectsByUser = userService.getTotalProjectsByUser();
+        return ResponseEntity.ok().body(listTotalProjectsByUser);
+    }
+
+    @Operation(summary = "Obter a lista de usuários com o total de tarefas que ele é integrante (Exceto concluídas)")
+    @GetMapping("/total-tasks-by-user")
+    public ResponseEntity<List<Object[]>> getTotalTasksByUser() {
+        List<Object[]> listTotalTasksByUser = userService.getTotalTasksByUser();
+        return ResponseEntity.ok().body(listTotalTasksByUser);
     }
 }
