@@ -188,8 +188,8 @@ A documentação da API está disponível em:
     ```json
     {
       "description": "Desenvolvimento de frontend",
-      "startTime": "2025-03-13T08:00:00",
-      "endTime": "2025-03-13T12:00:00"
+      "startTime": "HH:mm",
+      "endTime": "HH:mm"
       "userResponsibleId": 2,
       "taskId": 1,
     }
@@ -200,8 +200,8 @@ A documentação da API está disponível em:
     ```json
     {
       "description": "Desenvolvimento de frontend",
-      "startTime": "2025-03-13T08:00:00",
-      "endTime": "2025-03-13T12:00:00"
+      "startTime": "HH:mm",
+      "endTime": "HH:mm"
       "userResponsibleId": 2,
       "taskId": 1,
     }
