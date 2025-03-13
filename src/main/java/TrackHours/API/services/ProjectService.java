@@ -1,9 +1,7 @@
 package TrackHours.API.services;
 
 import TrackHours.API.DTO.Project.CreateProjectDTO;
-import TrackHours.API.DTO.Project.ProjectResponseDTO;
 import TrackHours.API.DTO.Project.UpdateProjectDTO;
-import TrackHours.API.DTO.User.UpdateUserDTO;
 import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
 import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Project;
@@ -18,8 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProjectService {
@@ -33,6 +31,7 @@ public class ProjectService {
     @Autowired
     private TaskRepository taskRepository;
 
+    // Create project
     public Project createProject(CreateProjectDTO createProjectDTO) {
         User responsibleUser = userRepository.findById(createProjectDTO.responsibleUser())
                 .orElseThrow(() -> new UserNotFoundException("Usuário com esse ID não encontrado: " + createProjectDTO.responsibleUser()));
@@ -53,13 +52,13 @@ public class ProjectService {
         return projectRepository.findAllNotDeleted();
     }
 
-    // Find By ID
+    // Find By Project by ID
     public Project findProjectById(Long id) {
         return projectRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado - ID: " + id));
     }
 
-    // Update User By ID
+    // Update Project By ID
     public Project updateProjectById(Long id, UpdateProjectDTO updateProjectDTO) {
         Project project = projectRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado"));
@@ -91,7 +90,7 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
-    // Delete By ID
+    // Delete By Project ID
     public void deleteById(Long id, Authentication authentication) {
         Project project = projectRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ProjectNotFoundException("Projeto não encontrado ou foi excluído"));
@@ -124,5 +123,16 @@ public class ProjectService {
         }
 
         projectRepository.delete(project);
+    }
+
+    // Get total hours launched by projects in last 30 days
+    public List<Object[]> getTotalHoursByProjectLast30Days() {
+        LocalDateTime dataInicio = LocalDateTime.now().minusDays(30); // Calcula a data de início (últimos 30 dias)
+        return projectRepository.getTotalHoursByProjectLast30Days(dataInicio);
+    }
+
+    // Get ongoing tasks by projects
+    public List<Object[]> getOngoingTasksByProject() {
+        return projectRepository.getOngoingTasksByProject();
     }
 }
