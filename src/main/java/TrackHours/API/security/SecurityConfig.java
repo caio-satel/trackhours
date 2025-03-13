@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/users/userLogged").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH,"/users/change-password").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/tasks/byUser").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/late-tasks").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/releases/byUser").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST,"/releases/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/releases/**").hasAnyRole("USER", "ADMIN")
