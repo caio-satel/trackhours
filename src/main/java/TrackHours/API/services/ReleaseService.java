@@ -1,15 +1,14 @@
 package TrackHours.API.services;
 
 import TrackHours.API.DTO.Release.CreateReleaseDTO;
-import TrackHours.API.DTO.Release.ReleaseDTO;
 import TrackHours.API.DTO.Release.UpdateReleaseDTO;
-import TrackHours.API.DTO.Task.CreateTaskDTO;
-import TrackHours.API.DTO.Task.TaskDTO;
-import TrackHours.API.entities.Project;
+import TrackHours.API.Exceptions.Release.ReleaseNotFoundException;
+import TrackHours.API.Exceptions.Tasks.TaskNotFoundException;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotCollaboratorTaskException;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Release;
 import TrackHours.API.entities.Task;
 import TrackHours.API.entities.User;
-import TrackHours.API.enumTypes.tasks.StatusTask;
 import TrackHours.API.repositories.ReleaseRepository;
 import TrackHours.API.repositories.TaskRepository;
 import TrackHours.API.repositories.UserRepository;
@@ -31,18 +30,18 @@ public class ReleaseService {
     @Autowired
     private UserRepository userRepository;
 
-    // Create release com usuário logado
+    // Create release by user logged
     public Release createRelease(CreateReleaseDTO createReleaseDTO, Authentication userAuthenticated) {
         Task task = taskRepository.findById(createReleaseDTO.taskId())
-                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+                .orElseThrow(() -> new TaskNotFoundException("Tarefa não encontrada"));
 
         String email = userAuthenticated.getName();
 
         User user = userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
 
         if (!task.getIntegrantes().contains(user)) {
-            throw new RuntimeException("Usuário não faz parte da tarefa. Não é possível criar a lançamento!");
+            throw new UserNotCollaboratorTaskException("Usuário não faz parte da tarefa. Não é possível criar a lançamento!");
         }
 
         var releaseCreated = new Release(
@@ -67,33 +66,31 @@ public class ReleaseService {
         String email = authentication.getName();
 
         userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
 
         return releaseRepository.findReleasesByUserLogged(email);
     }
 
     // Find Release by ID
     public Release getReleaseById(Long id) {
-        Release release = releaseRepository.findByIdAndNotDeleted(id)
-                .orElseThrow(() -> new RuntimeException("Lançamento não encontrado"));
-
-        return release;
+        return releaseRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new ReleaseNotFoundException("Lançamento não encontrado"));
     }
 
     // Update release by ID com usuário logado
     public Release updateReleaseByID(Long id, UpdateReleaseDTO updateReleaseDTO, Authentication userAuthenticated) {
         // Busca a release pelo ID
         var releaseEntity = releaseRepository.findByIdAndNotDeleted(id)
-                .orElseThrow(() -> new RuntimeException("Release não encontrada ou deletada com id: " + id));
+                .orElseThrow(() -> new ReleaseNotFoundException("Release não encontrada ou deletada com id: " + id));
 
         // Obtém o usuário autenticado
         String email = userAuthenticated.getName();
         User user = userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
 
         // Verifica se o usuário faz parte da tarefa associada à release
         if (!releaseEntity.getTask().getIntegrantes().contains(user)) {
-            throw new RuntimeException("Usuário não faz parte da tarefa. Não é possível atualizar o lançamento!");
+            throw new UserNotCollaboratorTaskException("Usuário não faz parte da tarefa. Não é possível atualizar o lançamento!");
         }
 
         // Atualiza os campos da release, se forem fornecidos no DTO
@@ -110,14 +107,14 @@ public class ReleaseService {
             releaseEntity.setEndTime(updateReleaseDTO.endTime());
         }
 
-        // Atualiza a tarefa associada, se fornecida no DTO
+        // Atualiza a tarefa associada
         if (updateReleaseDTO.taskId() != null) {
             var taskEntity = taskRepository.findById(updateReleaseDTO.taskId())
-                    .orElseThrow(() -> new RuntimeException("Tarefa relacionada não encontrada: " + updateReleaseDTO.taskId()));
+                    .orElseThrow(() -> new TaskNotFoundException("Tarefa relacionada não encontrada: " + updateReleaseDTO.taskId()));
 
             // Verifica se o usuário faz parte da nova tarefa
             if (!taskEntity.getIntegrantes().contains(user)) {
-                throw new RuntimeException("Usuário não faz parte da nova tarefa. Não é possível atualizar o lançamento!");
+                throw new UserNotCollaboratorTaskException("Usuário não faz parte da nova tarefa. Não é possível atualizar o lançamento!");
             }
 
             releaseEntity.setTask(taskEntity);
@@ -130,20 +127,25 @@ public class ReleaseService {
     public boolean deleteById(Long id, Authentication authentication) {
         // Busca a release pelo ID
         var release = releaseRepository.findByIdAndNotDeleted(id)
-                .orElseThrow(() -> new RuntimeException("Release não encontrada com id: " + id));
+                .orElseThrow(() -> new ReleaseNotFoundException("Release não encontrada com id: " + id));
 
         // Obtém o usuário autenticado
         String email = authentication.getName();
         User user = userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado"));
 
         // Verifica se o usuário faz parte da tarefa associada à release
         if (!release.getTask().getIntegrantes().contains(user)) {
-            throw new RuntimeException("Usuário não faz parte da tarefa. Não é possível deletar o lançamento!");
+            throw new UserNotCollaboratorTaskException("Usuário não faz parte da tarefa. Não é possível deletar o lançamento!");
         }
 
         releaseRepository.deleteById(id);
 
         return true;
+    }
+
+    // Find Releases and Total Hours Launched by User
+    public List<Object[]> getLaunchesAndTotalHoursByUser() {
+        return releaseRepository.findLaunchesAndTotalHoursByUser();
     }
 }
