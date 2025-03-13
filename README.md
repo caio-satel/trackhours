@@ -51,11 +51,11 @@ Ela fornece endpoints para:
 ## Configuração
 
 ### Configurar o banco de dados e outras variáveis de ambiente:
-Ajuste o seu arquivo ```application.properties``` conforme as configurações do banco de dados:
+Ajuste o seu arquivo ```application.properties``` conforme as configurações do seu banco de dados:
 
 ```properties
 # Configuração do Banco de Dados
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=create-drop
 spring.datasource.url=jdbc:mysql://localhost:3306/sistema_gerenciamento?createDatabaseIfNotExist=true
 spring.datasource.username=root
 spring.datasource.password=suasenha
