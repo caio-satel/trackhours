@@ -1,14 +1,12 @@
 package TrackHours.API.controllers;
 
-import TrackHours.API.DTO.Project.ProjectResponseDTO;
 import TrackHours.API.DTO.Task.CreateTaskDTO;
 import TrackHours.API.DTO.Task.TaskDTO;
 import TrackHours.API.DTO.Task.UpdateTaskDTO;
-import TrackHours.API.DTO.User.UpdateRoleUserDTO;
 import TrackHours.API.DTO.mapper.TaskMapper;
 import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
 import TrackHours.API.Exceptions.Tasks.TaskNotFoundException;
-import TrackHours.API.entities.Project;
+import TrackHours.API.Exceptions.UsersExceptions.UserNotFoundException;
 import TrackHours.API.entities.Task;
 import TrackHours.API.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/tasks")
@@ -35,7 +31,15 @@ public class TaskController {
     @Autowired
     private TaskMapper map;
 
-    @Operation(summary = "Criar nova tarefa (Apenas administradores)")
+    @Operation(
+            summary = "Criar nova tarefa",
+            description = "Corpo da requisição esperado: { " +
+                    "\"name\": \"Exemplo\", " +
+                    "\"startDate\": \"dd/MM/yyyy\", " +
+                    "\"endDate\": \"dd/MM/yyyy\", " +
+                    "\"projectId\": 1, " +
+                    "\"collaborators\": [1, 2, 3] }"
+    )
     @PostMapping
     public ResponseEntity<Object> newTask(@RequestBody CreateTaskDTO createTaskDTO) {
         try {
@@ -51,14 +55,14 @@ public class TaskController {
         }
     }
 
-    @Operation(summary = "Obter tarefa por ID (Apenas administradores)")
+    @Operation(summary = "Obter tarefa por ID")
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> getTask(@PathVariable Long id) {
         TaskDTO taskDTO = taskService.getTaskDTOById(id);
         return ResponseEntity.ok(taskDTO);
     }
 
-    @Operation(summary = "Obter lista de tarefas (Apenas administradores)")
+    @Operation(summary = "Obter lista de tarefas")
     @GetMapping
     public ResponseEntity<List<TaskDTO>> getAllTask () {
         List<Task> listTasks = taskService.getAllTasks();
@@ -74,40 +78,55 @@ public class TaskController {
     @Operation(summary = "Obter lista de tarefas do usuário logado")
     @GetMapping("/byUser")
     public ResponseEntity<List<TaskDTO>> getTasksForCurrentUser(Authentication authentication) {
-        List<Task> tasks = taskService.getTasksForCurrentUser(authentication);
+        try {
+            List<Task> tasks = taskService.getTasksForCurrentUser(authentication);
 
-        List<TaskDTO> taskDTOs = tasks.stream()
-                .map(map::taskToTaskDTO)
-                .collect(Collectors.toList());
+            List<TaskDTO> taskDTOs = tasks.stream()
+                    .map(map::taskToTaskDTO)
+                    .toList();
 
-        return ResponseEntity.ok(taskDTOs);
+            return ResponseEntity.ok(taskDTOs);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
+    @Operation(summary = "Obter lista de tarefa atrasadas do usuário logado")
     @GetMapping("/late-tasks")
     public ResponseEntity<List<TaskDTO>> getLateTasksByUser(Authentication authentication) {
-        List<Task> lateTasks = taskService.getLateTasksByUser(authentication);
+        try {
+            List<Task> lateTasks = taskService.getLateTasksByUser(authentication);
 
-        List<TaskDTO> lateTasksDTO = lateTasks.stream()
-                .map(map::taskToTaskDTO)
-                .toList();
+            List<TaskDTO> lateTasksDTO = lateTasks.stream()
+                    .map(map::taskToTaskDTO)
+                    .toList();
 
-        return ResponseEntity.ok(lateTasksDTO);
+            return ResponseEntity.ok(lateTasksDTO);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    @Operation(summary = "Atualizar tarefa por ID (Apenas administradores)")
+    @Operation(summary = "Atualizar tarefa por ID", description = "Corpo da requisição esperado: { " +
+            "\"name\": \"Exemplo\", " +
+            "\"startDate\": \"dd/MM/yyyy\", " +
+            "\"endDate\": \"dd/MM/yyyy\", " +
+            "\"projectId\": 1, " +
+            "\"status\": \"OPEN\" ou \"PROGRESS\" ou \"PAUSED\" ou \"DONE\", " +
+            "\"collaborators\": [1, 2, 3] }")
     @PutMapping("/{id}")
     public ResponseEntity<TaskDTO> updateTaskById(@PathVariable Long id, @RequestBody UpdateTaskDTO updateTaskDTO) {
-        Task updatedTask = taskService.updateTaskById(id, updateTaskDTO);
+        try {
+            Task updatedTask = taskService.updateTaskById(id, updateTaskDTO);
 
-        if (updatedTask == null) {
-            return ResponseEntity.notFound().build();
+            TaskDTO taskDTO = map.taskToTaskDTO(updatedTask);
+            return ResponseEntity.ok(taskDTO);
+        } catch (TaskNotFoundException | ProjectNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-
-        TaskDTO taskDTO = map.taskToTaskDTO(updatedTask);
-        return ResponseEntity.ok(taskDTO);
     }
 
-    @Operation(summary = "Deletar tarefa por ID (Apenas administradores)")
+    @Operation(summary = "Deletar tarefa por ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTaskById(@PathVariable Long id) {
         try {
@@ -118,5 +137,12 @@ public class TaskController {
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
+    }
+
+    @Operation(summary = "Obter a lista das atividades em que cada usuário está envolvido, com status e projeto associado")
+    @GetMapping("/details")
+    public ResponseEntity<List<Object[]>> getUserTaskProjectDetails() {
+        List<Object[]> userTaskDetails = taskService.getUserTaskProjectDetails();
+        return ResponseEntity.ok(userTaskDetails);
     }
 }

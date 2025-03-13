@@ -3,8 +3,6 @@ package TrackHours.API.services;
 import TrackHours.API.DTO.Task.CreateTaskDTO;
 import TrackHours.API.DTO.Task.TaskDTO;
 import TrackHours.API.DTO.Task.UpdateTaskDTO;
-import TrackHours.API.DTO.User.UpdateUserDTO;
-import TrackHours.API.DTO.User.UserDTO;
 import TrackHours.API.DTO.mapper.TaskMapper;
 import TrackHours.API.Exceptions.ProjectExceptions.ProjectNotFoundException;
 import TrackHours.API.Exceptions.Tasks.TaskNotFoundException;
@@ -22,8 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -126,7 +122,7 @@ public class TaskService {
                 task.setProject(project);
             }
 
-            // Atualiza a lista de colaboradores, se fornecida
+            // Atualiza a lista de colaboradores
             if (updateTaskDTO.collaborators() != null) {
                 // Lista de IDs dos novos colaboradores
                 List<Long> newCollaboratorIds = updateTaskDTO.collaborators();
@@ -152,7 +148,6 @@ public class TaskService {
             return task;
     }
 
-
     // Delete By ID
     public void deleteById(Long id) {
         var task = taskRepository.findByIdAndNotDeleted(id)
@@ -166,4 +161,8 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
+    // Get list details with users, tasks and projects
+    public List<Object[]> getUserTaskProjectDetails() {
+        return taskRepository.getUserTaskProjectDetails();
+    }
 }
